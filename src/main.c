@@ -1,3 +1,4 @@
+#include <sys/stat.h>
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 #include <glad/glad.h>
@@ -121,12 +122,14 @@ struct State {
     struct Rectangle player;
     struct Rectangle ball;
     struct Rectangle text_box;
+    struct Rectangle health_bar;
     struct LinkedList block;
     struct Text text;
 
     mat4 proj;
     unsigned int score;
     unsigned int speed_up_count;
+    unsigned short health;
 };
 
 bool aabb_collide(box2f a, box2f b) {
@@ -461,17 +464,25 @@ void state_init(struct State *state) {
     shader_use(state, SHADER_TEXT);
     glUniformMatrix4fv(glGetUniformLocation(state->shader.handle, "proj"), 1, GL_FALSE, &state->proj[0][0]);
 
-    state->state = READY;
-    state->score = 0;
+    state->state  = READY;
+    state->score  = 0;
+    state->health = 3;
     state->speed_up_count = 0;
 
     // TODO: change to use pointer to accual RECT_COLOR instead of copy from it to decrease cost of the operation.
-    state->player   = rect_init((ivec2){150,10}, (WIDTH/2.0f-150.0f/2.0f), 10.0f, RECT_COLOR[WHITE]);
-    state->ball     = rect_init((ivec2){10,10}, (WIDTH/2.0f-10.0f/2.0f), 25.0f, RECT_COLOR[WHITE]);
-    state->text_box = rect_init((ivec2){WIDTH, 50}, 0, HEIGHT-50.0f, RECT_COLOR[BLACK]);
-    state->text     = text_init((ivec2){64,40}, 8);
-    state->block    = linked_list_init(sizeof(struct Rectangle), free_node_rect);
+    state->player     = rect_init((ivec2){150,10}, (WIDTH/2.0f-150.0f/2.0f), 10.0f, RECT_COLOR[WHITE]);
+    state->ball       = rect_init((ivec2){10,10}, (WIDTH/2.0f-10.0f/2.0f), 25.0f, RECT_COLOR[WHITE]);
+    state->text_box   = rect_init((ivec2){WIDTH, 50}, 0, HEIGHT-50.0f, RECT_COLOR[BLACK]);
+    state->text       = text_init((ivec2){64,40}, 8);
+    state->health_bar = rect_init((ivec2){10,40}, WIDTH - 3.0f*15.0f, HEIGHT-45.0f, RECT_COLOR[WHITE]);
+    state->block      = linked_list_init(sizeof(struct Rectangle), free_node_rect);
     spawn_block(&state->block);
+}
+
+void reset_ball_pos(struct State *state) {
+    state->ball.x = (state->player.x + state->player.x + state->player.size[0])/2.0f - state->ball.size[0]/2.0f;
+    state->ball.y = state->player.y + state->player.size[1] + 5.0f;
+    vertices_set(state->ball.vertices, state->ball.size, (vec2) { state->ball.x, state->ball.y });
 }
 
 int main(void) {
@@ -495,7 +506,8 @@ int main(void) {
     state.time.last_frame = glfwGetTime();
     state.time.fps = 0;
     float accumulator = 0.0f;
-    int BALL_SPEEDX, BALL_SPEEDY;
+    int BALL_SPEEDX = BALL_SPEED; 
+    int BALL_SPEEDY = BALL_SPEED;
 
     glEnable(GL_CULL_FACE);
 
@@ -509,7 +521,7 @@ int main(void) {
         state.time.fps++;
 
         if (accumulator >= 1.0f) {
-            printf("FPS: %d\n", state.time.fps); 
+            printf("FPS: %d\tHEALTH: %d\n", state.time.fps, state.health); 
             state.time.fps = 0;
             accumulator = 0.0f;
         }
@@ -592,7 +604,14 @@ int main(void) {
             }
 
             if (state.ball.y < 0) {
-                assert(false);
+                if (state.health > 0) {
+                    state.health--;
+                    reset_ball_pos(&state);
+                    state.state = READY;
+                } else {
+                    assert(state.health);
+                }
+
             }
 
             state.ball.x += BALL_SPEEDX * state.time.delta_time;
@@ -614,19 +633,15 @@ int main(void) {
         if (state.input.space.pressed) {
             if (state.state == READY) {
                 if (WIDTH - (state.ball.x+state.ball.x+state.ball.size[0])/2.0 > WIDTH/2.0) {
-                    BALL_SPEEDX = -BALL_SPEED;
-                } else {
-                    BALL_SPEEDX = BALL_SPEED;
+                    BALL_SPEEDX = -BALL_SPEEDX;
                 }
-                BALL_SPEEDY = BALL_SPEED;
                 state.state = INGAME;
             }
         }
 
         // ball follows player position when in READY state
         if (state.state == READY && (state.input.left.pressed || state.input.right.pressed)) {
-            state.ball.x = (state.player.x + state.player.x + state.player.size[0])/2.0f - state.ball.size[0]/2.0f;
-            vertices_set(state.ball.vertices, state.ball.size, (vec2) { state.ball.x, state.ball.y });
+            reset_ball_pos(&state);
         }
 
         // respawn blocks when no longer have any blocks left
@@ -646,6 +661,13 @@ int main(void) {
        // render text_box (black box)
         glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(state.text_box.vertices), state.text_box.vertices);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, 0);
+
+        // render health bar
+        for (int health = 0; health < state.health; health++) {
+            vertices_set(state.health_bar.vertices, (ivec2){10,40}, (vec2){WIDTH - 3.0f*10.0f - 15.0f*health, HEIGHT - 45.0f});
+            glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(state.health_bar.vertices), state.health_bar.vertices);
+            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, 0);
+        }
 
         // TODO: change form using Uniform to something more less costly render rectangle
         for (struct Node *node = state.block.head; node != NULL; node = node->next) {
