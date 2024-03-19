@@ -12,6 +12,6 @@ add_executable(${PROJECT_NAME}
     lib/glad/src/glad.c
     src/main.c)
 
-target_compile_options(${PROJECT_NAME} PUBLIC -std=c2x -g3 -Wall -Wextra
-    -Wstrict-aliasing -Wpedantic)
+target_compile_options(${PROJECT_NAME} PUBLIC -std=c2x -O2 -Wall -Wextra
+    -Wstrict-aliasing -Wpedantic -Wno-unused-result)
 target_link_libraries(${PROJECT_NAME} PRIVATE glfw cglm)

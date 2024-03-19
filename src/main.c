@@ -520,7 +520,9 @@ int main(void) {
         state.time.fps++;
 
         if (accumulator >= 1.0f) {
-            printf("FPS: %d\tHEALTH: %d\n", state.time.fps, state.health); 
+            char buffer[24];
+            snprintf(buffer, sizeof(buffer), "Breakout (FPS: %d)", state.time.fps);
+            glfwSetWindowTitle(state.window, buffer);
             state.time.fps = 0;
             accumulator = 0.0f;
         }
