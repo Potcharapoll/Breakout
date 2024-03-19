@@ -10,7 +10,17 @@ include_directories(lib/stb)
 
 add_executable(${PROJECT_NAME} 
     lib/glad/src/glad.c
-    src/main.c)
+    src/main.c
+    src/gfx/game.c
+    src/gfx/renderer.c
+    src/gfx/text.c
+    src/gfx/texture.c
+    src/gfx/vao.c
+    src/gfx/vbo.c
+    src/gfx/shader.c
+    src/entity/entity.c
+    src/util/linked_list.c
+    )
 
 target_compile_options(${PROJECT_NAME} PUBLIC -std=c2x -O2 -Wall -Wextra
     -Wstrict-aliasing -Wpedantic -Wno-unused-result)
