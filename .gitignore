@@ -70,6 +70,7 @@ _deps
 
 ### CMake Patch ###
 # External projects
-*-build/
+build/*
+!build/build.xml
 
 # End of https://www.toptal.com/developers/gitignore/api/cmake,c
