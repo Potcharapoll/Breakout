@@ -2,6 +2,7 @@
 #define GAME_H
 #include "../entity/entity.h"
 #include "../util/linked_list.h"
+#include "../util/sound.h"
 #include "../util/types.h"
 #include "renderer.h"
 #include "text.h"
@@ -10,6 +11,11 @@ enum GameState {
     READY,
     INGAME,
     PAUSE
+};
+
+enum Sounds {
+    SOUND_BALL,
+    SOUND_LAST
 };
 
 struct Game {
@@ -38,6 +44,9 @@ struct Game {
 
     struct LinkedList block;
     struct Text text;
+
+    sound_context_t sound_context;
+    sound_t *sounds[SOUND_LAST];
 
     u32 score;
     u16 speed_up_count;

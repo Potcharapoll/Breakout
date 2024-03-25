@@ -20,8 +20,8 @@ add_executable(${PROJECT_NAME}
     src/gfx/shader.c
     src/entity/entity.c
     src/util/linked_list.c
+    src/util/sound.c
     )
 
-target_compile_options(${PROJECT_NAME} PUBLIC -std=c2x -O2 -Wall -Wextra
-    -Wstrict-aliasing -Wpedantic -Wno-unused-result)
-target_link_libraries(${PROJECT_NAME} PRIVATE glfw cglm)
+target_compile_options(${PROJECT_NAME} PRIVATE -std=c2x -O2 -Wall -Wextra -Wstrict-aliasing -Wpedantic -Wno-unused-result)
+target_link_libraries(${PROJECT_NAME} PRIVATE glfw cglm -lopenal -laudio)

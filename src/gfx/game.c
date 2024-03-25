@@ -76,6 +76,10 @@ void game_init(struct Game *self) {
     self->ball_speedX = BALL_SPEED;
     self->ball_speedY = BALL_SPEED;
 
+    sound_context_init(&self->sound_context);
+    sound_context_use(&self->sound_context);
+    self->sounds[SOUND_BALL] = sound_init("../res/sound/pong.wav");
+
     renderer_init(&self->renderer);
 
     // TODO: change to use pointer to accual RECT_COLOR instead of copy from it to decrease cost of the operation.
@@ -91,6 +95,9 @@ void game_init(struct Game *self) {
 void game_destroy(struct Game *self) {
     renderer_destroy(&self->renderer);
     linked_list_destroy(&self->block);
+
+    sound_context_destroy(&self->sound_context);
+    sound_free(self->sounds[SOUND_BALL]);
 }
 
 static void input(GLFWwindow *window, struct Game *self) {
@@ -203,6 +210,7 @@ static void update(struct Game *self) {
             box2f block_box = { {block->x, block->y}, {block->x + block->size[0], block->y + block->size[1]} };
 
             if (aabb_collide(block_box, ball)) {
+                sound_play(self->sounds[SOUND_BALL]);
                 self->ball_speedY *= -1;
                 rect_remove_index[idx++] = node->id;
             }
@@ -231,10 +239,12 @@ static void update(struct Game *self) {
         free(rect_remove_index);
 
         if (self->ball.x < 0 || self->ball.x + self->ball.size[0] > WIDTH) {
+            sound_play(self->sounds[SOUND_BALL]);
             self->ball_speedX *= -1;
         }
 
         if (self->ball.y + self->ball.size[1] > HEIGHT-50 || aabb_collide(player, ball)) {
+            sound_play(self->sounds[SOUND_BALL]);
             self->ball_speedY *= -1;
         }
 
